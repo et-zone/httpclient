@@ -85,6 +85,10 @@ func (this *Client) Get() ([]byte, error) {
 	return b, nil
 }
 
+func (this *Client) Close() {
+	this.CloseIdleConnections()
+}
+
 type Param struct {
 	args []string
 	vals map[string]string
