@@ -47,7 +47,7 @@ func InitDefaultClientPool() *Client {
 		Timeout: time.Second * 10,
 	}}
 
-	client.Param = Param{args: []string{}, vals: map[string]string{}}
+	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
 	client.ctime = time.Now()
 	return client
 }
@@ -71,14 +71,14 @@ func InitDefaultClient() *Client {
 		Timeout: time.Second * 10,
 	}}
 
-	client.Param = Param{args: []string{}, vals: map[string]string{}}
+	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
 	client.ctime = time.Now()
 	return client
 }
 
 func InitClient(c http.Client) *Client {
 	client := &Client{Client: c}
-	client.Param = Param{args: []string{}, vals: map[string]string{}}
+	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
 	client.ctime = time.Now()
 	return client
 }
@@ -100,6 +100,12 @@ func (this *Client) Dao(ctx *eContext, method string, url string, body []byte) (
 		log.Println(err.Error())
 		return []byte{}, err
 	}
+
+	header := this.GetHeader()
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+
 	res, err := this.Do(req)
 	if err != nil {
 		log.Println(err.Error())
@@ -134,6 +140,10 @@ func (this *Client) Get(ctx *eContext, url string) ([]byte, error) {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
+	header := this.GetHeader()
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
 	res, err := this.Do(req)
 	if err != nil {
 		log.Println(err.Error())
@@ -157,14 +167,30 @@ func (this *Client) Close() {
 }
 
 type Param struct {
-	args []string
-	vals map[string]string
+	args      []string
+	vals      map[string]string
+	headerMap map[string]string
+}
+
+func (this *Param) InitParam() *Param {
+
+	return &Param{[]string{}, map[string]string{}, map[string]string{}}
 }
 
 func (this *Param) SetParam(key string, val string) *Param {
 	this.args = append(this.args, key)
 	this.vals[key] = val
 	return this
+}
+
+func (this *Param) SetHeader(key string, val string) *Param {
+	this.headerMap[key] = val
+	return this
+}
+
+func (this *Param) GetHeader() map[string]string {
+
+	return this.headerMap
 }
 
 func (this *Param) GetParam(key string) string {
