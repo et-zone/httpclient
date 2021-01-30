@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+
 	"net"
 	"net/http"
 	"time"
@@ -27,7 +28,7 @@ type Client struct {
 
 var timeout = time.Second * 10
 
-func InitDefaultClient() *Client {
+func InitDefaultClientPool() *Client {
 	client := &Client{Client: http.Client{
 		Transport: &http.Transport{
 			DisableKeepAlives: false,
@@ -40,6 +41,30 @@ func InitDefaultClient() *Client {
 			MaxIdleConns:        MaxIdleConns,
 			MaxConnsPerHost:     MaxConnsPerHost,
 			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
+		},
+
+		Timeout: time.Second * 10,
+	}}
+
+	client.Param = Param{args: []string{}, vals: map[string]string{}}
+	client.ctime = time.Now()
+	return client
+}
+
+func InitDefaultClient() *Client {
+	client := &Client{Client: http.Client{
+		Transport: &http.Transport{
+			DisableKeepAlives: false,
+			Proxy:             http.ProxyFromEnvironment,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        MaxIdleConns,
+			MaxConnsPerHost:     1,
+			MaxIdleConnsPerHost: 1,
 			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
 		},
 
