@@ -2,33 +2,67 @@ package httpclient
 
 import (
 	"bytes"
+	"crypto/tls"
+	"errors"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"time"
 )
 
+const (
+	MaxIdleConnsPerHost = 100
+	IdleConnTimeout     = 300
+	MaxIdleConns        = 1000
+	MaxConnsPerHost     = 1000
+)
+
 type Client struct {
 	http.Client
-	Url string
 	Param
-	ctime  time.Time
-	method string
+	ctime   time.Time
+	AppName string
 }
 
 var timeout = time.Second * 10
 
-func InitClient(baseUrl string) *Client {
-	client := &Client{Client: http.Client{}}
-	client.Timeout = timeout
-	client.Url = baseUrl
+func InitDefaultClient() *Client {
+	client := &Client{Client: http.Client{
+		Transport: &http.Transport{
+			DisableKeepAlives: false,
+			Proxy:             http.ProxyFromEnvironment,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        MaxIdleConns,
+			MaxConnsPerHost:     MaxConnsPerHost,
+			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
+		},
+
+		Timeout: time.Second * 10,
+	}}
+
 	client.Param = Param{args: []string{}, vals: map[string]string{}}
 	client.ctime = time.Now()
 	return client
 }
-func (this *Client) Dao(method string, body []byte) ([]byte, error) {
-	this.method = method
-	url := this.Url
+
+func InitClient(c http.Client) *Client {
+	client := &Client{Client: c}
+	client.Param = Param{args: []string{}, vals: map[string]string{}}
+	client.ctime = time.Now()
+	return client
+}
+
+func (this *Client) Dao(ctx *eContext, method string, url string, body []byte) ([]byte, error) {
+	if url == "" {
+		return nil, errors.New("url can not nil")
+	}
+	this.ctime = time.Now()
 	if len(this.Param.args) != 0 {
 		url = url + "?"
 		for _, key := range this.Param.args {
@@ -46,19 +80,23 @@ func (this *Client) Dao(method string, body []byte) ([]byte, error) {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
+	defer res.Body.Close()
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
-	log.Println("Method:", this.method, "Path: ", this.Url, " time: ", time.Since(this.ctime))
+	seteContext(ctx, this.ctime, this.AppName, method, url, time.Since(this.ctime))
+	logINFO(ctx)
 	return b, nil
 }
 
-func (this *Client) Get() ([]byte, error) {
-	this.method = "GET"
-	url := this.Url
+func (this *Client) Get(ctx *eContext, url string) ([]byte, error) {
+	if url == "" {
+		return nil, errors.New("url can not nil")
+	}
+	this.ctime = time.Now()
 	if len(this.Param.args) != 0 {
 		url = url + "?"
 		for _, key := range this.Param.args {
@@ -76,12 +114,16 @@ func (this *Client) Get() ([]byte, error) {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
+	defer res.Body.Close()
+
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println(err.Error())
 		return []byte{}, err
 	}
-	log.Println("Method:", this.method, "Path: ", this.Url, " time: ", time.Since(this.ctime))
+
+	seteContext(ctx, this.ctime, this.AppName, "GET", url, time.Since(this.ctime))
+	logINFO(ctx)
 	return b, nil
 }
 
@@ -102,4 +144,11 @@ func (this *Param) SetParam(key string, val string) *Param {
 
 func (this *Param) GetParam(key string) string {
 	return this.vals[key]
+}
+
+func init() {
+	err := initLog()
+	if err != nil {
+		panic(err.Error())
+	}
 }
