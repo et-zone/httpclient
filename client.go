@@ -172,9 +172,9 @@ type Param struct {
 	headerMap map[string]string
 }
 
-func (this *Param) InitParam() *Param {
+func NewParam() Param {
 
-	return &Param{[]string{}, map[string]string{}, map[string]string{}}
+	return Param{[]string{}, map[string]string{}, map[string]string{}}
 }
 
 func (this *Param) SetParam(key string, val string) *Param {
