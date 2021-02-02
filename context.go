@@ -11,16 +11,17 @@ type eContext struct {
 	appName  string
 	method   string
 	ip       string
-	path     string //不需要ip地址
-	nowtime  *time.Time
-	duration time.Duration
+	path     string        //不需要ip地址
+	nowtime  *time.Time    //
+	duration time.Duration //请求时长
+	Code     int           //状态吗
 }
 
 func NewContext() *eContext {
-	return &eContext{context.TODO(), "", "", "", "", nil, 0}
+	return &eContext{context.TODO(), "", "", "", "", nil, 0, 0}
 }
 
-func seteContext(ctx *eContext, t time.Time, appName string, method string, path string, duration time.Duration) {
+func seteContext(ctx *eContext, t time.Time, appName string, method string, path string, duration time.Duration, code int) {
 	if ctx == nil {
 		return
 	}
@@ -39,12 +40,13 @@ func seteContext(ctx *eContext, t time.Time, appName string, method string, path
 	ctx.method = method
 	ctx.nowtime = &t
 	ctx.duration = duration
+	ctx.Code = code
 }
 
-func (ctx *eContext) GeteContextInfo() (nowtime *time.Time, appName string, ip string, mothod string, path string, duration time.Duration) {
+func (ctx *eContext) GeteContextInfo() (nowtime *time.Time, appName string, ip string, mothod string, path string, duration time.Duration, code int) {
 	if ctx == nil {
 		t := time.Now()
-		return &t, "", "", "", "", 0
+		return &t, "", "", "", "", 0, 0
 	}
-	return ctx.nowtime, ctx.appName, ctx.ip, ctx.method, ctx.path, ctx.duration
+	return ctx.nowtime, ctx.appName, ctx.ip, ctx.method, ctx.path, ctx.duration, ctx.Code
 }

@@ -24,8 +24,8 @@ func Post() {
 	// post
 	client := httpclient.InitDefaultClient()
 	client.Param.SetHeader("fff", "ggg")
-	for i := 0; i < 1000; i++ {
-		rep, _ := client.Dao(httpclient.NewContext(), "POST", "http://127.0.0.1:8888/ping", []byte("hahidshdsfad返回"))
-		fmt.Println(string(rep))
+	for i := 0; i < 10; i++ {
+		client.Dao(httpclient.NewContext(), "POST", "http://127.0.0.1:8888/ping", []byte("hahidshdsfad返回"))
+
 	}
 }

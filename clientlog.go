@@ -33,5 +33,9 @@ func initLog() error {
 }
 
 func logINFO(ctx *eContext) {
-	file.WriteString("{\"time\":\"" + ctx.nowtime.Format("2006-01-02 15:04:05") + "\",\"appName\":\"" + ctx.appName + "\",Method\":\"" + ctx.method + "\",\"Path\":\"" + ctx.path + "\",\"time\":" + strconv.Itoa(int(ctx.duration)) + "}\n")
+	file.WriteString("{\"time\":\"" + ctx.nowtime.Format("2006-01-02 15:04:05") +
+		"\",\"appName\":\"" + ctx.appName + "\",Method\":\"" + ctx.method +
+		"\",\"Path\":\"" + ctx.path + "\",\"time\":" + strconv.Itoa(int(ctx.duration)) +
+		"\"code\":" + strconv.Itoa(ctx.Code) +
+		"}\n")
 }
