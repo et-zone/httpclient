@@ -24,7 +24,7 @@ func initLog() error {
 		os.Mkdir(logpath, os.ModePerm)
 	}
 
-	file, err = os.OpenFile(logpath+time.Now().Format("2006_01_02")+"_"+logfile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	file, err = os.OpenFile(logpath+time.Now().Format("2006_01_02")+"_"+logfile, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log.Println("log_file_err", err.Error())
 		return err
