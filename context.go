@@ -27,7 +27,7 @@ func seteContext(ctx *eContext, t time.Time, appName string, method string, path
 	}
 	plist := strings.Split(path, "?")
 
-	if strings.Contains(plist[0], "http") {
+	if strings.Contains(plist[0], "http") || strings.Contains(plist[0], "https") {
 		list := strings.SplitN(plist[0], "/", 4)
 		ctx.ip = list[2]
 		ctx.path = "/" + list[3]
