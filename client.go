@@ -121,7 +121,7 @@ func (this *Client) Dao( method string, url string, body []byte) ([]byte, error)
 	return b, nil
 }
 
-func (this *Client) Get(ctx *eContext, url string) ([]byte, error) {
+func (this *Client) Get(url string) ([]byte, error) {
 	if url == "" {
 		return nil, errors.New("url can not nil")
 	}
