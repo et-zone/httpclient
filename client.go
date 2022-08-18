@@ -83,7 +83,7 @@ func InitClient(c http.Client) *Client {
 	return client
 }
 
-func (this *Client) Dao(ctx *eContext, method string, url string, body []byte) ([]byte, error) {
+func (this *Client) Dao( method string, url string, body []byte) ([]byte, error) {
 	if url == "" {
 		return nil, errors.New("url can not nil")
 	}
@@ -118,8 +118,6 @@ func (this *Client) Dao(ctx *eContext, method string, url string, body []byte) (
 		log.Println(err.Error())
 		return []byte{}, err
 	}
-	seteContext(ctx, this.ctime, this.AppName, method, url, time.Since(this.ctime), res.StatusCode)
-	logINFO(ctx)
 	return b, nil
 }
 
@@ -157,8 +155,6 @@ func (this *Client) Get(ctx *eContext, url string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	seteContext(ctx, this.ctime, this.AppName, "GET", url, time.Since(this.ctime), res.StatusCode)
-	logINFO(ctx)
 	return b, nil
 }
 
