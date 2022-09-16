@@ -17,19 +17,23 @@ const (
 	IdleConnTimeout     = 300
 	MaxIdleConns        = 1000
 	MaxConnsPerHost     = 1000
+	DefaultTimeout =time.Duration(10)
 )
 
-type Client struct {
-	http.Client
-	Param
-	ctime   time.Time
-	AppName string
+var cli *http.Client
+
+type client struct {
+	*http.Client
+	param
+}
+func GetClient()client{
+	return client{cli,newParam()}
 }
 
 var timeout = time.Second * 10
 
-func InitDefaultClientPool() *Client {
-	client := &Client{Client: http.Client{
+func NewDefaultPool() {
+	cli =&http.Client{
 		Transport: &http.Transport{
 			DisableKeepAlives: false,
 			Proxy:             http.ProxyFromEnvironment,
@@ -43,55 +47,21 @@ func InitDefaultClientPool() *Client {
 			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
 			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
 		},
-
-		Timeout: time.Second * 10,
-	}}
-
-	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
-	client.ctime = time.Now()
-	return client
+		Timeout: time.Second * DefaultTimeout,
+	}
+}
+func init() {
+	cli = http.DefaultClient
 }
 
-func InitDefaultClient() *Client {
-	client := &Client{Client: http.Client{
-		Transport: &http.Transport{
-			DisableKeepAlives: false,
-			Proxy:             http.ProxyFromEnvironment,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        MaxIdleConns,
-			MaxConnsPerHost:     1,
-			MaxIdleConnsPerHost: 1,
-			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
-		},
-
-		Timeout: time.Second * 10,
-	}}
-
-	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
-	client.ctime = time.Now()
-	return client
-}
-
-func InitClient(c http.Client) *Client {
-	client := &Client{Client: c}
-	client.Param = Param{args: []string{}, vals: map[string]string{}, headerMap: map[string]string{}}
-	client.ctime = time.Now()
-	return client
-}
-
-func (this *Client) Dao( method string, url string, body []byte) ([]byte, error) {
+func (this *client) Dao(method string, url string, body []byte) ([]byte, error) {
 	if url == "" {
 		return nil, errors.New("url can not nil")
 	}
-	this.ctime = time.Now()
-	if len(this.Param.args) != 0 {
+	if len(this.param.args) != 0 {
 		url = url + "?"
-		for _, key := range this.Param.args {
-			url += key + "=" + this.Param.vals[key] + "&"
+		for _, key := range this.param.args {
+			url += key + "=" + this.param.vals[key] + "&"
 		}
 		url = url[:len(url)-1]
 	}
@@ -121,15 +91,14 @@ func (this *Client) Dao( method string, url string, body []byte) ([]byte, error)
 	return b, nil
 }
 
-func (this *Client) Get(url string) ([]byte, error) {
+func (this *client) Get(url string) ([]byte, error) {
 	if url == "" {
 		return nil, errors.New("url can not nil")
 	}
-	this.ctime = time.Now()
-	if len(this.Param.args) != 0 {
+	if len(this.param.args) != 0 {
 		url = url + "?"
-		for _, key := range this.Param.args {
-			url += key + "=" + this.Param.vals[key] + "&"
+		for _, key := range this.param.args {
+			url += key + "=" + this.param.vals[key] + "&"
 		}
 		url = url[:len(url)-1]
 	}
@@ -158,44 +127,38 @@ func (this *Client) Get(url string) ([]byte, error) {
 	return b, nil
 }
 
-func (this *Client) Close() {
-	this.CloseIdleConnections()
-}
+//
+//func (this *Client) Close() {
+//	this.CloseIdleConnections()
+//}
 
-type Param struct {
+type param struct {
 	args      []string
 	vals      map[string]string
 	headerMap map[string]string
 }
 
-func NewParam() Param {
+func newParam() param {
 
-	return Param{[]string{}, map[string]string{}, map[string]string{}}
+	return param{[]string{}, map[string]string{}, map[string]string{}}
 }
 
-func (this *Param) SetParam(key string, val string) *Param {
+func (this *param) SetParam(key string, val string) *param {
 	this.args = append(this.args, key)
 	this.vals[key] = val
 	return this
 }
 
-func (this *Param) SetHeader(key string, val string) *Param {
+func (this *param) SetHeader(key string, val string) *param {
 	this.headerMap[key] = val
 	return this
 }
 
-func (this *Param) GetHeader() map[string]string {
+func (this *param) GetHeader() map[string]string {
 
 	return this.headerMap
 }
 
-func (this *Param) GetParam(key string) string {
+func (this *param) GetParam(key string) string {
 	return this.vals[key]
-}
-
-func init() {
-	err := initLog()
-	if err != nil {
-		panic(err.Error())
-	}
 }
